@@ -8,7 +8,10 @@ namespace app.Euler
          public static int Sum(int e)
         {
             int sum = 0;
-            sum = divisors.Sum(x => geometricExpansion(e-1, x));
+            e -= 1;
+            sum = divisors.Sum(x => geometricExpansion(e, x));
+            int v = divisors[0] * divisors[1];
+            sum -= geometricExpansion(e, v);
             return sum;
         }
 

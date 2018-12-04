@@ -8,19 +8,13 @@ namespace appTests
     {
         [Theory]
         [InlineData(10, 23)]
-        public void EulerCanCalculateCorrectly(int val, int result)
+        [InlineData(1000, 233168)]
+        [InlineData(0,0)]
+        [InlineData(-1,0)]
+        public void EulerCanCalculateCorrectly(int val, int expected)
         {
             int underTest = Euler.Sum(val);
-            Assert.Equal(result, underTest);
+            Assert.True(expected.Equals(underTest),$"Expected {expected} but got {underTest}");
         }
-
-        //[Theory]
-        //[InlineData(-1, new object[] { new int[] { 3, 5 }})]
-        //[InlineData(0, new object[] { new int[]{ 3, 5 }})]
-        //[InlineData(100, new object[] { new int[]{ -3, 5 }})]
-        //public void EulerHandlesNegativeNumbers(int value, int[] divisors)
-        //{
-        //    Assert.Throws<ArgumentException>(() => Euler.Sum(value, divisors));
-        //}
     }
 }

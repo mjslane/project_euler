@@ -5,4 +5,4 @@ services:
     image: ${DOCKER_REGISTRY-}app
     build:
       context: .
-      dockerfile: project_euler/Dockerfile
+      dockerfile: project_euler/app/Dockerfile
