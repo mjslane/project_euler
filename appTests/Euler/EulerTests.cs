@@ -10,9 +10,8 @@ namespace appTests
         [InlineData(10, 23)]
         public void EulerCanCalculateCorrectly(int val, int result)
         {
-            int[] testDivisors = new[] { 3, 5 };
-            int underTest = Euler.Sum(val, testDivisors);
-            Assert.Equal(underTest, result);
+            int underTest = Euler.Sum(val);
+            Assert.Equal(result, underTest);
         }
 
         //[Theory]
