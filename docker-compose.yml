@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  app:
+    image: ${DOCKER_REGISTRY-}app
+    build:
+      context: .
+      dockerfile: project_euler/Dockerfile
