@@ -1,7 +1,7 @@
 ﻿using System;
 namespace app.Kafka
 {
-    public class KafkaTopicConsumer
+    public class KafkaTopicConsumer : IKafkaTopicConsumer
     {
         public KafkaTopicConsumer()
         {
