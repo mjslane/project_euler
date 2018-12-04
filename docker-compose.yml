@@ -6,3 +6,10 @@ services:
     build:
       context: .
       dockerfile: project_euler/app/Dockerfile
+
+  apptests:
+    image: ${DOCKER_REGISTRY-}apptests
+    build:
+      context: .
+      dockerfile: appTests/Dockerfile
+
