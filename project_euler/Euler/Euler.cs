@@ -5,20 +5,20 @@ namespace app.Euler
     public static class Euler
     {
         private static int[] divisors = new[] { 3, 5 };
-         public static int Sum(int e)
+         public static int Sum(int limit)
         {
             int sum = 0;
-            e -= 1;
-            sum = divisors.Sum(x => geometricExpansion(e, x));
-            int v = divisors[0] * divisors[1];
-            sum -= geometricExpansion(e, v);
+            limit -= 1;
+            sum = divisors.Sum(x => geometricExpansion(limit, x));
+            int duplicatesDivisor = divisors[0] * divisors[1];
+            sum -= geometricExpansion(limit, duplicatesDivisor);
             return sum;
         }
 
-        private static int geometricExpansion(int x, int divisor)
+        private static int geometricExpansion(int limit, int divisor)
         {
-            int v = (x / divisor);
-            return divisor * v * (v + 1) / 2;
+            int numberOfElements = (x / divisor);
+            return divisor * numberOfElements * (numberOfElements + 1) / 2;
         }
     }
 }
