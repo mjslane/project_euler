@@ -14,50 +14,66 @@ namespace project_euler
         private static List<string> kafkaJobsTopics = new List<string>();
         private static string kafkaAnswerTopic;
         private static string kafkaBroker;
-
+        private static SslConfig sslConfig;
+        enum SSL { CAFILE, KEYFILE, CERTFILE}
+        private static void setTopicsFromStringList(string value)
+        {
+            kafkaJobsTopics = value.Split(',').ToList();
+        }
 
         public class Options
         {
             [Option('f', "file", Required = false, Default = null, HelpText = "Path to file containing configuration options")]
             public string ConfigurationFileName { get; set; }
+
+            [Option('b', "brokers", Required = false, Default = null, HelpText = "Comma seperated list of Kafka brokers")]
+            public string Brokers { get; set; }
+
+            [Option('j', "job-topic", Required = false, Default = null, HelpText = "Name of the Jobs topic to subscribe to")]
+            public string JobTopic { get; set; }
+
+            [Option('a', "answer-topic", Required = false, Default = null, HelpText = "Name of the answer topic to publish to")]
+            public string AnswerTopic { get; set; }
+
+            [Option('c', "ca-file", Required = false, Default = null, HelpText = "Path to ssl ca file")]
+            public string CaFile { get; set; }
+
+            [Option('k', "key-file", Required = false, Default = null, HelpText = "Path to ssl key file")]
+            public string KeyFile { get; set; }
+
+            [Option('x', "cert-file", Required = false, Default = null, HelpText = "Path to ssl cert file ")]
+            public string CertFile { get; set; }
         }
 
         static void Main(string[] args)
         {
-            ParseOptions(args);
+            GetConfiguration(args);
 
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
-            var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics);
+            var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
             consumer.Consume(writeMessage, cts.Token);
 
         }
 
-        private static void writeMessage(Message<Ignore, string> obj)
+        private static void GetConfiguration(string[] args)
         {
-            Console.WriteLine($"{obj.ToString()} {obj.Key} {obj.Value} {obj.Timestamp}");
+            var parsedArgs = Parser.Default.ParseArguments<Options>(args);
+            ParseFileOptions(parsedArgs);
+            GetEnvironmentOptions();
+            GetCommandLineOptions(parsedArgs);
         }
 
-        private static void ParseOptions(string[] args)
+        private static void ParseFileOptions(ParserResult<Options> options)
         {
-            Parser.Default.ParseArguments<Options>(args).WithParsed<Options>(options =>
+            options.WithParsed<Options>(opts =>
             {
-                if (!string.IsNullOrEmpty(options.ConfigurationFileName))
+                if (!string.IsNullOrWhiteSpace(opts.ConfigurationFileName))
                 {
-                    Console.WriteLine($"Reading options from {options.ConfigurationFileName}");
-                    parseConfigFile(options.ConfigurationFileName);
-                }
-                else
-                {
-                    kafkaJobsTopics.Add ("interview_mattslane_jobs");
-                    kafkaAnswerTopic = "interview_mattslane_answers";
-                    kafkaBroker = "kafka-1703877a-duncan-bc6e.aivencloud.com:24308";
+                    Console.WriteLine($"Reading options from {opts.ConfigurationFileName}");
+                    parseConfigFile(opts.ConfigurationFileName);
                 }
             });
-
-            Console.WriteLine($"Jobs topic: {kafkaJobsTopics}");
-            Console.WriteLine($"Answer topic: {kafkaAnswerTopic}");
-            Console.WriteLine($"Broker: {kafkaBroker}");
         }
 
         private static void parseConfigFile(string configurationFileName)
@@ -73,10 +89,15 @@ namespace project_euler
                            kafkaBroker = kvp[1];
                            break;
                        case "KAFKA_JOBS_TOPIC":
-                           kafkaJobsTopics = kvp[1].Split(',').ToList();
+                           setTopicsFromStringList(kvp[1]);
                            break;
                        case "KAFKA_ANSWER_TOPIC":
                            kafkaAnswerTopic = kvp[1];
+                           break;
+                       case "CERT_FILE_LOCATION":
+                       case "CA_FILE_LOCATION":
+                       case "KEY_FILE_LOCATION":
+                           writeSSLValue(kvp[0], kvp[1]);
                            break;
                        default:
                            break;
@@ -87,7 +108,98 @@ namespace project_euler
             {
                 throw new FileNotFoundException($"{configurationFileName} does not exist");
             }
+        }
 
+        private static void GetEnvironmentOptions()
+        {
+            var val = Environment.GetEnvironmentVariable("KAFKA_BROKER");
+            if (!String.IsNullOrWhiteSpace(val))
+            {
+                kafkaBroker = val;
+            }
+
+            val = Environment.GetEnvironmentVariable("KAFKA_JOBS_TOPIC");
+            if (!String.IsNullOrWhiteSpace(val))
+            {
+                setTopicsFromStringList(val);
+            }
+
+            val = Environment.GetEnvironmentVariable("KAFKA_ANSWER_TOPIC");
+            if (!String.IsNullOrWhiteSpace(val))
+            {
+                kafkaAnswerTopic = val;
+            }
+
+            val = Environment.GetEnvironmentVariable("CERT_FILE_LOCATION");
+            if (!String.IsNullOrWhiteSpace(val))
+            {
+                writeSSLValue("CERT_FILE_LOCATION", val);
+            }
+
+            val = Environment.GetEnvironmentVariable("CA_FILE_LOCATION");
+            if (!String.IsNullOrWhiteSpace(val))
+            {
+                writeSSLValue("CA_FILE_LOCATION", val);
+            }
+
+            val = Environment.GetEnvironmentVariable("KEY_FILE_LOCATION");
+            if (!String.IsNullOrWhiteSpace(val))
+            {
+                writeSSLValue("KEY_FILE_LOCATION", val);
+            }
+        }
+
+        private static void GetCommandLineOptions(ParserResult<Options> options)
+        {
+            options.WithParsed<Options>(opts =>
+            {
+                if (!String.IsNullOrWhiteSpace(opts.Brokers))
+                {
+                    kafkaBroker = opts.Brokers;
+                }
+
+                if (!String.IsNullOrWhiteSpace(opts.JobTopic))
+                {
+                    setTopicsFromStringList(opts.JobTopic);
+                }
+
+                if (!String.IsNullOrWhiteSpace(opts.AnswerTopic))
+                {
+                    kafkaAnswerTopic = opts.AnswerTopic;
+                }
+
+                if (!String.IsNullOrWhiteSpace(opts.CaFile))
+                {
+                    writeSSLValue("CA_FILE_LOCATION", opts.CaFile);
+                }
+
+                if (!String.IsNullOrWhiteSpace(opts.CertFile))
+                {
+                    writeSSLValue("CERT_FILE_LOCATION", opts.CertFile);
+                }
+
+                if (!String.IsNullOrWhiteSpace(opts.KeyFile))
+                {
+                    writeSSLValue("KEY_FILE_LOCATION", opts.KeyFile);
+                }
+            });
+        }
+
+        private static void writeSSLValue(string v1, string v2)
+        {
+            if(sslConfig == null)
+            {
+                sslConfig = new SslConfig();
+            }
+
+            if (v1 == "CERT_FILE_LOCATION") sslConfig.CertificateLocation = v2;
+            if (v1 == "CA_FILE_LOCATION") sslConfig.CaLocation = v2;
+            if (v1 == "KEY_FILE_LOCATION") sslConfig.KeyLocation = v2;
+        }
+
+        private static void writeMessage(Message<Ignore, string> obj)
+        {
+            Console.WriteLine($"{obj.ToString()} {obj.Key} {obj.Value} {obj.Timestamp}");
         }
     }
 }

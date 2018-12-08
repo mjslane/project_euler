@@ -45,3 +45,5 @@ Thumbs.db
 *.cert
 *.key
 parameters.txt
+*.env
+README.pdf

@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: project_euler/Dockerfile
+    env_file:
+     - euler.env
 
   apptests:
     image: ${DOCKER_REGISTRY-}apptests
