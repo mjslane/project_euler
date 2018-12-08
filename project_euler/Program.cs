@@ -16,6 +16,26 @@ namespace project_euler
         private static string kafkaBroker;
         private static SslConfig sslConfig;
         enum SSL { CAFILE, KEYFILE, CERTFILE}
+
+        static void Main(string[] args)
+        {
+            GetConfiguration(args);
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
+            var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
+            consumer.Consume(writeMessage, cts.Token);
+
+        }
+
+        private static void GetConfiguration(string[] args)
+        {
+            var parsedArgs = Parser.Default.ParseArguments<Options>(args);
+            ParseFileOptions(parsedArgs);
+            GetEnvironmentOptions();
+            GetCommandLineOptions(parsedArgs);
+        }
+
         private static void setTopicsFromStringList(string value)
         {
             kafkaJobsTopics = value.Split(',').ToList();
@@ -43,25 +63,6 @@ namespace project_euler
 
             [Option('x', "cert-file", Required = false, Default = null, HelpText = "Path to ssl cert file ")]
             public string CertFile { get; set; }
-        }
-
-        static void Main(string[] args)
-        {
-            GetConfiguration(args);
-
-            CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
-            var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
-            consumer.Consume(writeMessage, cts.Token);
-
-        }
-
-        private static void GetConfiguration(string[] args)
-        {
-            var parsedArgs = Parser.Default.ParseArguments<Options>(args);
-            ParseFileOptions(parsedArgs);
-            GetEnvironmentOptions();
-            GetCommandLineOptions(parsedArgs);
         }
 
         private static void ParseFileOptions(ParserResult<Options> options)
@@ -185,16 +186,16 @@ namespace project_euler
             });
         }
 
-        private static void writeSSLValue(string v1, string v2)
+        private static void writeSSLValue(string key, string value)
         {
             if(sslConfig == null)
             {
                 sslConfig = new SslConfig();
             }
 
-            if (v1 == "CERT_FILE_LOCATION") sslConfig.CertificateLocation = v2;
-            if (v1 == "CA_FILE_LOCATION") sslConfig.CaLocation = v2;
-            if (v1 == "KEY_FILE_LOCATION") sslConfig.KeyLocation = v2;
+            if (key == "CERT_FILE_LOCATION") sslConfig.CertificateLocation = value;
+            if (key == "CA_FILE_LOCATION") sslConfig.CaLocation = value;
+            if (key == "KEY_FILE_LOCATION") sslConfig.KeyLocation = value;
         }
 
         private static void writeMessage(Message<Ignore, string> obj)

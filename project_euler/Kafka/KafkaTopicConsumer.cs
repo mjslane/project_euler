@@ -24,11 +24,23 @@ namespace app.Kafka
                 { "statistics.interval.ms", 60000 },
                 { "session.timeout.ms", 6000 },
                 { "auto.offset.reset", "smallest" },
-                { "security.protocol", "ssl"},
-                { "ssl.key.location", sslConfig.KeyLocation },
-                { "ssl.certificate.location", sslConfig.CertificateLocation },
-                { "ssl.ca.location", sslConfig.CaLocation }
+                { "security.protocol", "ssl"}
             };
+
+            if (!String.IsNullOrWhiteSpace(sslConfig.CaLocation))
+            {
+                config.Add("ssl.ca.location", sslConfig.CaLocation);
+            }
+
+            if (!String.IsNullOrWhiteSpace(sslConfig.KeyLocation))
+            {
+                config.Add("ssl.key.location", sslConfig.KeyLocation);
+            }
+
+            if (!String.IsNullOrWhiteSpace(sslConfig.CertificateLocation))
+            {
+                config.Add("ssl.certificate.location", sslConfig.CertificateLocation);
+            }
 
             var serialiser = new StringDeserializer(Encoding.UTF8);
             this.consumer = new Consumer<Ignore, string>(config, null, serialiser);
