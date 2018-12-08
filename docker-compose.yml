@@ -5,11 +5,11 @@ services:
     image: ${DOCKER_REGISTRY-}app
     build:
       context: .
-      dockerfile: project_euler/app/Dockerfile
+      dockerfile: project_euler/Dockerfile
 
   apptests:
     image: ${DOCKER_REGISTRY-}apptests
     build:
       context: .
-      dockerfile: appTests/Dockerfile
+      dockerfile: Dockerfile.test
 

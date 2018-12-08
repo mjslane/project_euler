@@ -12,7 +12,7 @@ namespace app.Kafka
         private readonly Consumer<Ignore, string> consumer;
         private readonly List<string> topics;
 
-        public KafkaTopicConsumer(string brokerList, List<string> topics)
+        public KafkaTopicConsumer(string brokerList, List<string> topics, SslConfig sslConfig)
         {
 
             var config = new Dictionary<string, object>
@@ -23,10 +23,16 @@ namespace app.Kafka
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },
                 { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" }
+                { "auto.offset.reset", "smallest" },
+                { "security.protocol", "ssl"},
+                { "ssl.key.location", sslConfig.KeyLocation },
+                { "ssl.certificate.location", sslConfig.CertificateLocation },
+                { "ssl.ca.location", sslConfig.CaLocation }
             };
 
-            this.consumer = new Consumer<Ignore, string>(config, null, new StringDeserializer());
+            var serialiser = new StringDeserializer(Encoding.UTF8);
+            this.consumer = new Consumer<Ignore, string>(config, null, serialiser);
+            
             this.topics = topics;
         }
 

@@ -17,7 +17,7 @@ namespace app.Euler
 
         private static int geometricExpansion(int limit, int divisor)
         {
-            int numberOfElements = (x / divisor);
+            int numberOfElements = (limit / divisor);
             return divisor * numberOfElements * (numberOfElements + 1) / 2;
         }
     }

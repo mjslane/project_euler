@@ -39,3 +39,9 @@ Thumbs.db
 
 # dotCover
 *.dotCover
+
+#Security
+*.pem
+*.cert
+*.key
+parameters.txt
