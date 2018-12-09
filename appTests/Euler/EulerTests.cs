@@ -11,6 +11,7 @@ namespace appTests
         [InlineData(1000, 233168)]
         [InlineData(0,0)]
         [InlineData(-1,0)]
+        [InlineData(-10,0)]
         public void EulerCanCalculateCorrectly(int val, int expected)
         {
             int underTest = Euler.Sum(val);

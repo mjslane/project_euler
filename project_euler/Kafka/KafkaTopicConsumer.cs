@@ -17,7 +17,7 @@ namespace app.Kafka
             var config = new Dictionary<string, object>
             {
                 { "bootstrap.servers", brokerList },
-                { "group.id", "matt_slane100" },
+                { "group.id", "euler" },
                 { "enable.auto.commit", false },
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },

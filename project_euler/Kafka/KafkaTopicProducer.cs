@@ -16,13 +16,11 @@ namespace app.Kafka
             var config = new Dictionary<string, object>
             {
                 { "bootstrap.servers", brokerList },
-                { "group.id", "matt_slane" },
+                { "group.id", "euler" },
                 { "enable.auto.commit", true },  // this is the default
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },
-                { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "earliest" },
-
+                { "session.timeout.ms", 6000 }
             };
 
             SetSslConfig(sslConfig, config);
