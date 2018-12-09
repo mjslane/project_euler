@@ -20,4 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\project_euler\app.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Dockerfile" />
+  </ItemGroup>
 </Project>
