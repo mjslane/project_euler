@@ -20,5 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Kafka\IKafkaTopicConsumer.cs" />
+    <Compile Remove="Kafka\IKafkaTopicPublisher.cs" />
   </ItemGroup>
 </Project>

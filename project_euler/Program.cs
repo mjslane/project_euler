@@ -6,6 +6,7 @@ using app.Kafka;
 using System.Collections.Generic;
 using System.Threading;
 using Confluent.Kafka;
+using app.Euler;
 
 namespace project_euler
 {
@@ -15,7 +16,8 @@ namespace project_euler
         private static string kafkaAnswerTopic;
         private static string kafkaBroker;
         private static SslConfig sslConfig;
-        enum SSL { CAFILE, KEYFILE, CERTFILE}
+        private static KafkaTopicPublisher kafkaTopicPublisher;
+      
 
         static void Main(string[] args)
         {
@@ -24,8 +26,8 @@ namespace project_euler
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
             var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
+            kafkaTopicPublisher = new KafkaTopicPublisher(kafkaBroker, kafkaAnswerTopic, sslConfig);
             consumer.Consume(writeMessage, cts.Token);
-
         }
 
         private static void GetConfiguration(string[] args)
@@ -80,8 +82,9 @@ namespace project_euler
         private static void parseConfigFile(string configurationFileName)
         {
             if (File.Exists(configurationFileName))
-            { 
-                Array.ForEach(File.ReadAllLines(configurationFileName), item =>
+            {
+                var lines = File.ReadAllLines(configurationFileName);
+                Array.ForEach(lines, item =>
                {
                    string[] kvp = item.Split('=');
                    switch (kvp[0])
@@ -200,7 +203,17 @@ namespace project_euler
 
         private static void writeMessage(Message<Ignore, string> obj)
         {
-            Console.WriteLine($"{obj.ToString()} {obj.Key} {obj.Value} {obj.Timestamp}");
+            int value;
+            if (int.TryParse(obj.Value, out value))
+            {
+                int sum = Euler.Sum(value);
+                 
+                kafkaTopicPublisher.PublishMessage($"{value}: {sum}");
+            }
+            else
+            {
+                Console.WriteLine($"Error parsing {obj.Value} to Int");
+            }
         }
     }
 }

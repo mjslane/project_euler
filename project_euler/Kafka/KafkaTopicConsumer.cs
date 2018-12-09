@@ -13,33 +13,37 @@ namespace app.Kafka
         private readonly List<string> topics;
 
         public KafkaTopicConsumer(string brokerList, List<string> topics, SslConfig sslConfig)
-        {
-
+        { 
             var config = new Dictionary<string, object>
             {
                 { "bootstrap.servers", brokerList },
-                { "group.id", "csharp-consumer" },
+                { "group.id", "matt_slane" },
                 { "enable.auto.commit", true },  // this is the default
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },
                 { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "smallest" },
-                { "security.protocol", "ssl"}
+                { "auto.offset.reset", "earliest" },
+
             };
 
-            if (!String.IsNullOrWhiteSpace(sslConfig.CaLocation))
+            if (sslConfig != null)
             {
-                config.Add("ssl.ca.location", sslConfig.CaLocation);
-            }
+                config.Add("security.protocol", "ssl");
 
-            if (!String.IsNullOrWhiteSpace(sslConfig.KeyLocation))
-            {
-                config.Add("ssl.key.location", sslConfig.KeyLocation);
-            }
+                if (!String.IsNullOrWhiteSpace(sslConfig.CaLocation))
+                {
+                    config.Add("ssl.ca.location", sslConfig.CaLocation);
+                }
 
-            if (!String.IsNullOrWhiteSpace(sslConfig.CertificateLocation))
-            {
-                config.Add("ssl.certificate.location", sslConfig.CertificateLocation);
+                if (!String.IsNullOrWhiteSpace(sslConfig.KeyLocation))
+                {
+                    config.Add("ssl.key.location", sslConfig.KeyLocation);
+                }
+
+                if (!String.IsNullOrWhiteSpace(sslConfig.CertificateLocation))
+                {
+                    config.Add("ssl.certificate.location", sslConfig.CertificateLocation);
+                }
             }
 
             var serialiser = new StringDeserializer(Encoding.UTF8);
@@ -60,6 +64,12 @@ namespace app.Kafka
             consumer.OnOffsetsCommitted += (_, commit) => Console.WriteLine(
                         commit.Error ? $"Failed to commit offsets: {commit.Error}" : $"Successfully committed offsets: [{string.Join(", ", commit.Offsets)}]"
                     );
+
+            consumer.OnPartitionsAssigned += (_, p) => {
+                List<TopicPartitionOffset> offsets = new List<TopicPartitionOffset>();
+                p.ForEach(p1 => offsets.Add(new TopicPartitionOffset(p1, Offset.Beginning)));
+                consumer.Assign(offsets);
+            };
 
             consumer.Subscribe(this.topics);
 
