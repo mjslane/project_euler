@@ -16,7 +16,7 @@ namespace project_euler
         private static string kafkaAnswerTopic;
         private static string kafkaBroker;
         private static SslConfig sslConfig;
-        private static KafkaTopicPublisher kafkaTopicPublisher;
+        private static KafkaTopicProducer kafkaTopicProducer;
       
 
         static void Main(string[] args)
@@ -26,7 +26,7 @@ namespace project_euler
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
             var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
-            kafkaTopicPublisher = new KafkaTopicPublisher(kafkaBroker, kafkaAnswerTopic, sslConfig);
+            kafkaTopicProducer = new KafkaTopicProducer(kafkaBroker, kafkaAnswerTopic, sslConfig);
             consumer.Consume(writeMessage, cts.Token);
         }
 
@@ -208,7 +208,7 @@ namespace project_euler
             {
                 int sum = Euler.Sum(value);
                  
-                kafkaTopicPublisher.PublishMessage($"{value}: {sum}");
+                kafkaTopicProducer.ProduceMessage($"{value}: {sum}");
             }
             else
             {

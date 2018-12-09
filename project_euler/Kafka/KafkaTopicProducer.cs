@@ -8,7 +8,7 @@ namespace app.Kafka
 {
     public class KafkaTopicProducer
     {
-        private readonly Producer<Ignore, string> producer;
+        private readonly Producer<Null, string> producer;
         private readonly string topic;
 
         public KafkaTopicProducer(string brokerList, string topic, SslConfig sslConfig)
@@ -46,7 +46,7 @@ namespace app.Kafka
             }
 
             var serialiser = new StringSerializer(Encoding.UTF8);
-            this.producer = new Producer<Ignore, string>(config, null, serialiser);
+            this.producer = new Producer<Null, string>(config, null, serialiser);
 
             this.topic = topic;
         }
