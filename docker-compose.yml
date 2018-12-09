@@ -8,10 +8,8 @@ services:
       dockerfile: project_euler/Dockerfile
     env_file:
      - euler.env
-
-  apptests:
-    image: ${DOCKER_REGISTRY-}apptests
-    build:
-      context: .
-      dockerfile: Dockerfile.test
+    volumes:
+     - ./ssl:/app/ssl
+     
+     
 

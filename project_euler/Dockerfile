@@ -9,6 +9,14 @@ COPY . .
 WORKDIR /src/project_euler
 RUN dotnet build app.csproj -c Release -o /app
 
+FROM build AS test
+WORKDIR /src
+COPY appTests/appTests.csproj appTests/
+RUN dotnet restore appTests/appTests.csproj
+COPY . .
+WORKDIR /src/appTests
+RUN dotnet test appTests.csproj
+
 FROM build AS publish
 RUN dotnet publish app.csproj -c Release -o /app
 

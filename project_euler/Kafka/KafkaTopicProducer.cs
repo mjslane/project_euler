@@ -6,12 +6,12 @@ using Confluent.Kafka.Serialization;
 
 namespace app.Kafka
 {
-    public class KafkaTopicProducer
+    public class KafkaTopicProducer : KafkaClient
     {
-        private readonly Producer<Null, string> producer;
+        private readonly Producer<string, string> producer;
         private readonly string topic;
 
-        public KafkaTopicProducer(string brokerList, string topic, SslConfig sslConfig)
+        public KafkaTopicProducer(string brokerList, string topic, SslConfig sslConfig) 
         {
             var config = new Dictionary<string, object>
             {
@@ -25,35 +25,17 @@ namespace app.Kafka
 
             };
 
-            if (sslConfig != null)
-            {
-                config.Add("security.protocol", "ssl");
-
-                if (!String.IsNullOrWhiteSpace(sslConfig.CaLocation))
-                {
-                    config.Add("ssl.ca.location", sslConfig.CaLocation);
-                }
-
-                if (!String.IsNullOrWhiteSpace(sslConfig.KeyLocation))
-                {
-                    config.Add("ssl.key.location", sslConfig.KeyLocation);
-                }
-
-                if (!String.IsNullOrWhiteSpace(sslConfig.CertificateLocation))
-                {
-                    config.Add("ssl.certificate.location", sslConfig.CertificateLocation);
-                }
-            }
-
-            var serialiser = new StringSerializer(Encoding.UTF8);
-            this.producer = new Producer<Null, string>(config, null, serialiser);
+            SetSslConfig(sslConfig, config);
+            var keySerialiser = new StringSerializer(Encoding.UTF8);
+            var valueSerialiser = new StringSerializer(Encoding.UTF8);
+            this.producer = new Producer<string, string>(config, keySerialiser, valueSerialiser);
 
             this.topic = topic;
         }
 
-        public void ProduceMessage(string message)
+        public void ProduceMessage(string key, string message)
         {
-            var deliveryResult  = this.producer.ProduceAsync(this.topic, null, message).Result;
+            var deliveryResult  = this.producer.ProduceAsync(this.topic, key, message).Result;
             if (deliveryResult.Error != null)
             {
                 Console.WriteLine($"Failed to deliver '{message}' to topic { deliveryResult.Topic}: deliveryResult.Error");

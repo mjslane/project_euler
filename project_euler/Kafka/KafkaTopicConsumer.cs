@@ -7,52 +7,33 @@ using Confluent.Kafka.Serialization;
 
 namespace app.Kafka
 {
-    public class KafkaTopicConsumer
+    public class KafkaTopicConsumer : KafkaClient
     {
-        private readonly Consumer<Ignore, string> consumer;
+        private readonly Consumer<string, string> consumer;
         private readonly List<string> topics;
 
         public KafkaTopicConsumer(string brokerList, List<string> topics, SslConfig sslConfig)
-        { 
+        {
             var config = new Dictionary<string, object>
             {
                 { "bootstrap.servers", brokerList },
-                { "group.id", "matt_slane" },
-                { "enable.auto.commit", true },  // this is the default
+                { "group.id", "matt_slane100" },
+                { "enable.auto.commit", false },
                 { "auto.commit.interval.ms", 5000 },
                 { "statistics.interval.ms", 60000 },
                 { "session.timeout.ms", 6000 },
-                { "auto.offset.reset", "earliest" },
-
+                { "auto.offset.reset", "earliest" }
             };
+            SetSslConfig(sslConfig, config);
 
-            if (sslConfig != null)
-            {
-                config.Add("security.protocol", "ssl");
+            var keyDeserialiser = new StringDeserializer(Encoding.UTF8);
+            var valueDeserialiser = new StringDeserializer(Encoding.UTF8);
+            this.consumer = new Consumer<string, string>(config, keyDeserialiser, valueDeserialiser);
 
-                if (!String.IsNullOrWhiteSpace(sslConfig.CaLocation))
-                {
-                    config.Add("ssl.ca.location", sslConfig.CaLocation);
-                }
-
-                if (!String.IsNullOrWhiteSpace(sslConfig.KeyLocation))
-                {
-                    config.Add("ssl.key.location", sslConfig.KeyLocation);
-                }
-
-                if (!String.IsNullOrWhiteSpace(sslConfig.CertificateLocation))
-                {
-                    config.Add("ssl.certificate.location", sslConfig.CertificateLocation);
-                }
-            }
-
-            var serialiser = new StringDeserializer(Encoding.UTF8);
-            this.consumer = new Consumer<Ignore, string>(config, null, serialiser);
-            
             this.topics = topics;
         }
 
-        public void Consume(Action<Message<Ignore, string>> messageOperator, CancellationToken cancellationToken)
+        public void Consume(Action<Message<string, string>> messageOperator, CancellationToken cancellationToken)
         {
             this.consumer.OnMessage += (_, msg) => messageOperator(msg);
             consumer.OnPartitionEOF += (_, end) => Console.WriteLine($"Reached end of topic {end.Topic} partition {end.Partition}, next message will be at offset {end.Offset}");

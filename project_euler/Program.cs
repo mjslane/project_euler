@@ -10,7 +10,7 @@ using app.Euler;
 
 namespace project_euler
 {
-    class Program
+    partial class Program
     {
         private static List<string> kafkaJobsTopics = new List<string>();
         private static string kafkaAnswerTopic;
@@ -18,7 +18,6 @@ namespace project_euler
         private static SslConfig sslConfig;
         private static KafkaTopicProducer kafkaTopicProducer;
       
-
         static void Main(string[] args)
         {
             GetConfiguration(args);
@@ -27,6 +26,7 @@ namespace project_euler
             Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
             var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
             kafkaTopicProducer = new KafkaTopicProducer(kafkaBroker, kafkaAnswerTopic, sslConfig);
+
             consumer.Consume(writeMessage, cts.Token);
         }
 
@@ -41,30 +41,6 @@ namespace project_euler
         private static void setTopicsFromStringList(string value)
         {
             kafkaJobsTopics = value.Split(',').ToList();
-        }
-
-        public class Options
-        {
-            [Option('f', "file", Required = false, Default = null, HelpText = "Path to file containing configuration options")]
-            public string ConfigurationFileName { get; set; }
-
-            [Option('b', "brokers", Required = false, Default = null, HelpText = "Comma seperated list of Kafka brokers")]
-            public string Brokers { get; set; }
-
-            [Option('j', "job-topic", Required = false, Default = null, HelpText = "Name of the Jobs topic to subscribe to")]
-            public string JobTopic { get; set; }
-
-            [Option('a', "answer-topic", Required = false, Default = null, HelpText = "Name of the answer topic to publish to")]
-            public string AnswerTopic { get; set; }
-
-            [Option('c', "ca-file", Required = false, Default = null, HelpText = "Path to ssl ca file")]
-            public string CaFile { get; set; }
-
-            [Option('k', "key-file", Required = false, Default = null, HelpText = "Path to ssl key file")]
-            public string KeyFile { get; set; }
-
-            [Option('x', "cert-file", Required = false, Default = null, HelpText = "Path to ssl cert file ")]
-            public string CertFile { get; set; }
         }
 
         private static void ParseFileOptions(ParserResult<Options> options)
@@ -201,14 +177,13 @@ namespace project_euler
             if (key == "KEY_FILE_LOCATION") sslConfig.KeyLocation = value;
         }
 
-        private static void writeMessage(Message<Ignore, string> obj)
+        private static void writeMessage(Message<string, string> obj)
         {
-            int value;
-            if (int.TryParse(obj.Value, out value))
+            if (int.TryParse(obj.Value, out int value))
             {
                 int sum = Euler.Sum(value);
-                 
-                kafkaTopicProducer.ProduceMessage($"{value}: {sum}");
+                Console.WriteLine($"{value}: {sum}");
+                //kafkaTopicProducer.ProduceMessage(obj.Key, value.ToString());
             }
             else
             {
