@@ -24,21 +24,65 @@ namespace project_euler
 
             CancellationTokenSource cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
-            var consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
-            kafkaTopicProducer = new KafkaTopicProducer(kafkaBroker, kafkaAnswerTopic, sslConfig);
-
-            consumer.Consume(writeMessage, cts.Token);
+            KafkaTopicConsumer consumer;
+            try
+            {
+                consumer = new KafkaTopicConsumer(kafkaBroker, kafkaJobsTopics, sslConfig);
+                kafkaTopicProducer = new KafkaTopicProducer(kafkaBroker, kafkaAnswerTopic, sslConfig);
+                consumer.Consume(WriteMessage, cts.Token);
+            }
+            // This is bad but the documentation on exceptions thrown by confluent is poor.
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed: {e.GetType()} - {e.Message}");
+            }
         }
 
         private static void GetConfiguration(string[] args)
         {
-            var parsedArgs = Parser.Default.ParseArguments<Options>(args);
-            ParseFileOptions(parsedArgs);
-            GetEnvironmentOptions();
-            GetCommandLineOptions(parsedArgs);
+            try
+            {
+                var parsedArgs = Parser.Default.ParseArguments<Options>(args);
+                ParseFileOptions(parsedArgs);
+                GetEnvironmentOptions();
+                GetCommandLineOptions(parsedArgs);
+                CheckConfiguration();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"Failed to configure application: {e.GetType()} - {e.Message}");
+                System.Environment.Exit(1);
+            }
         }
 
-        private static void setTopicsFromStringList(string value)
+        private static void CheckConfiguration()
+        {
+            bool failed = false;
+            if(String.IsNullOrWhiteSpace(kafkaAnswerTopic))
+            {
+                Console.WriteLine("No answer topic set.");
+                failed = true;
+            }
+
+            if (String.IsNullOrWhiteSpace(kafkaBroker))
+            {
+                Console.WriteLine("No broker set.");
+                failed = true;
+            }
+
+            if(kafkaJobsTopics.Count == 0)
+            {
+                Console.WriteLine("No Jobs Topics specified.");
+                failed = true;
+            }
+
+            if (failed) 
+            {
+                Environment.Exit(1);
+            }
+        }
+
+        private static void SetTopicsFromStringList(string value)
         {
             kafkaJobsTopics = value.Split(',').ToList();
         }
@@ -50,12 +94,12 @@ namespace project_euler
                 if (!string.IsNullOrWhiteSpace(opts.ConfigurationFileName))
                 {
                     Console.WriteLine($"Reading options from {opts.ConfigurationFileName}");
-                    parseConfigFile(opts.ConfigurationFileName);
+                    ParseConfigFile(opts.ConfigurationFileName);
                 }
             });
         }
 
-        private static void parseConfigFile(string configurationFileName)
+        private static void ParseConfigFile(string configurationFileName)
         {
             if (File.Exists(configurationFileName))
             {
@@ -69,7 +113,7 @@ namespace project_euler
                            kafkaBroker = kvp[1];
                            break;
                        case "KAFKA_JOBS_TOPIC":
-                           setTopicsFromStringList(kvp[1]);
+                           SetTopicsFromStringList(kvp[1]);
                            break;
                        case "KAFKA_ANSWER_TOPIC":
                            kafkaAnswerTopic = kvp[1];
@@ -77,7 +121,7 @@ namespace project_euler
                        case "CERT_FILE_LOCATION":
                        case "CA_FILE_LOCATION":
                        case "KEY_FILE_LOCATION":
-                           writeSSLValue(kvp[0], kvp[1]);
+                           WriteSSLValue(kvp[0], kvp[1]);
                            break;
                        default:
                            break;
@@ -101,7 +145,7 @@ namespace project_euler
             val = Environment.GetEnvironmentVariable("KAFKA_JOBS_TOPIC");
             if (!String.IsNullOrWhiteSpace(val))
             {
-                setTopicsFromStringList(val);
+                SetTopicsFromStringList(val);
             }
 
             val = Environment.GetEnvironmentVariable("KAFKA_ANSWER_TOPIC");
@@ -113,19 +157,19 @@ namespace project_euler
             val = Environment.GetEnvironmentVariable("CERT_FILE_LOCATION");
             if (!String.IsNullOrWhiteSpace(val))
             {
-                writeSSLValue("CERT_FILE_LOCATION", val);
+                WriteSSLValue("CERT_FILE_LOCATION", val);
             }
 
             val = Environment.GetEnvironmentVariable("CA_FILE_LOCATION");
             if (!String.IsNullOrWhiteSpace(val))
             {
-                writeSSLValue("CA_FILE_LOCATION", val);
+                WriteSSLValue("CA_FILE_LOCATION", val);
             }
 
             val = Environment.GetEnvironmentVariable("KEY_FILE_LOCATION");
             if (!String.IsNullOrWhiteSpace(val))
             {
-                writeSSLValue("KEY_FILE_LOCATION", val);
+                WriteSSLValue("KEY_FILE_LOCATION", val);
             }
         }
 
@@ -140,7 +184,7 @@ namespace project_euler
 
                 if (!String.IsNullOrWhiteSpace(opts.JobTopic))
                 {
-                    setTopicsFromStringList(opts.JobTopic);
+                    SetTopicsFromStringList(opts.JobTopic);
                 }
 
                 if (!String.IsNullOrWhiteSpace(opts.AnswerTopic))
@@ -150,22 +194,22 @@ namespace project_euler
 
                 if (!String.IsNullOrWhiteSpace(opts.CaFile))
                 {
-                    writeSSLValue("CA_FILE_LOCATION", opts.CaFile);
+                    WriteSSLValue("CA_FILE_LOCATION", opts.CaFile);
                 }
 
                 if (!String.IsNullOrWhiteSpace(opts.CertFile))
                 {
-                    writeSSLValue("CERT_FILE_LOCATION", opts.CertFile);
+                    WriteSSLValue("CERT_FILE_LOCATION", opts.CertFile);
                 }
 
                 if (!String.IsNullOrWhiteSpace(opts.KeyFile))
                 {
-                    writeSSLValue("KEY_FILE_LOCATION", opts.KeyFile);
+                    WriteSSLValue("KEY_FILE_LOCATION", opts.KeyFile);
                 }
             });
         }
 
-        private static void writeSSLValue(string key, string value)
+        private static void WriteSSLValue(string key, string value)
         {
             if(sslConfig == null)
             {
@@ -177,7 +221,7 @@ namespace project_euler
             if (key == "KEY_FILE_LOCATION") sslConfig.KeyLocation = value;
         }
 
-        private static void writeMessage(Message<string, string> obj)
+        private static void WriteMessage(Message<string, string> obj)
         {
             if (int.TryParse(obj.Value, out int value))
             {
