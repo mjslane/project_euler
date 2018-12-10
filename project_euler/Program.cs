@@ -183,7 +183,7 @@ namespace project_euler
             {
                 int sum = Euler.Sum(value);
                 Console.WriteLine($"{value}: {sum}");
-                //kafkaTopicProducer.ProduceMessage(obj.Key, value.ToString());
+                kafkaTopicProducer.ProduceMessage(obj.Key, value.ToString());
             }
             else
             {

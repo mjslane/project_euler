@@ -11,14 +11,14 @@ namespace app.Euler
             if (limit > 0)
             {
                 limit -= 1;
-                sum = divisors.Sum(x => geometricExpansion(limit, x));
+                sum = divisors.Sum(x => geometricSolution(limit, x));
                 int duplicatesDivisor = divisors[0] * divisors[1];
-                sum -= geometricExpansion(limit, duplicatesDivisor);
+                sum -= geometricSolution(limit, duplicatesDivisor);
             }
             return sum;
         }
     
-    private static int geometricExpansion(int limit, int divisor)
+    private static int geometricSolution(int limit, int divisor)
     {
         int numberOfElements = (limit / divisor);
         return divisor * numberOfElements * (numberOfElements + 1) / 2;

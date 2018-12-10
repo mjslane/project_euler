@@ -34,7 +34,7 @@ namespace app.Kafka
         public void ProduceMessage(string key, string message)
         {
             var deliveryResult  = this.producer.ProduceAsync(this.topic, key, message).Result;
-            if (deliveryResult.Error != null)
+            if (deliveryResult != null && deliveryResult.Error.HasError)
             {
                 Console.WriteLine($"Failed to deliver '{message}' to topic { deliveryResult.Topic}: deliveryResult.Error");
             }
